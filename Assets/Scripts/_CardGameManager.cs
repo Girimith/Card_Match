@@ -17,6 +17,7 @@ public class _CardGameManager : MonoBehaviour
     int score;
 
     [SerializeField] private TextMeshProUGUI scoreText;
+    [SerializeField] private TextMeshProUGUI finalscoreText;
 
     public static int gameSize = 2;
 
@@ -59,6 +60,8 @@ public class _CardGameManager : MonoBehaviour
     public void StartCardGame()
     {
         if (gameStart) return;
+        scoreText.text = score.ToString();
+        SetGameSize();
         gameStart = true;
         panel.SetActive(true);
         winPanel.SetActive(false);
@@ -184,36 +187,24 @@ public class _CardGameManager : MonoBehaviour
     public void SetGameSize()
     {
         gameSize = (int)sizeSlider.value;
-        sizeLabel.text = gameSize + " X " + gameSize;
-        
-        if(gameSize == 2)
+        sizeLabel.text = gameSize + " * " + gameSize;
+
+        Dictionary<int, int> gameTime = new Dictionary<int, int>
         {
-            remainingTime = 10;
-        }
-        else if(gameSize == 3)
+        { 2, 10 },
+        { 3, 30 },
+        { 4, 60 },
+        { 5, 90 },
+        { 6, 120 },
+        { 7, 150 },
+        { 8, 180 }
+        };
+
+        if (gameTime.ContainsKey(gameSize))
         {
-            remainingTime = 30;
+            remainingTime = gameTime[gameSize];
         }
-        else if(gameSize == 4)
-        {
-            remainingTime = 60;
-        }
-        else if (gameSize == 5)
-        {
-            remainingTime = 90;
-        }
-        else if (gameSize == 6)
-        {
-            remainingTime = 120;
-        }
-        else if (gameSize == 7)
-        {
-            remainingTime = 150;
-        }
-        else if (gameSize == 8)
-        {
-            remainingTime = 180;
-        }
+
     }
     public Sprite GetSprite(int spriteId)
     {
@@ -268,18 +259,21 @@ public class _CardGameManager : MonoBehaviour
         {
             EndGame();
             winPanel.SetActive(true);
+            finalscoreText.text = score.ToString();
             AudioPlayer.Instance.PlayAudio(1);
         }
     }
 
     private void EndGame()
     {
+        
         gameStart = false;
         panel.SetActive(false);
     }
 
     public void GiveUp()
     {
+        score = 0;
         EndGame();
     }
 
