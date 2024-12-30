@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class _CardGameManager : MonoBehaviour
 {
@@ -10,25 +11,31 @@ public class _CardGameManager : MonoBehaviour
     [SerializeField] private RawImage _img;
     [SerializeField] private float _x, _y;
 
+    [SerializeField] private TextMeshProUGUI gameTimerText;
+
+    float remainingTime;
+    int score;
+
+    [SerializeField] private TextMeshProUGUI scoreText;
+
     public static int gameSize = 2;
 
     [SerializeField] private GameObject prefab;
     [SerializeField] private GameObject cardList;
     [SerializeField] private Sprite cardBack;
+
     // all possible sprite
     [SerializeField] private Sprite[] sprites;
+
     // list of card
     private _Card[] cards;
 
     //we place card on this panel
     [SerializeField] private GameObject panel;
-    [SerializeField] private GameObject info;
-    //[SerializeField] private _Card spritePreload;
-    [SerializeField] private Text sizeLabel;
+    [SerializeField] private GameObject winPanel;
+    [SerializeField] public GameObject losePanel;
+    [SerializeField] private TextMeshProUGUI sizeLabel;
     [SerializeField] private Slider sizeSlider;
-    [SerializeField] private Text timeLabel;
-
-    private float time;
 
     private int spriteSelected;
     private int cardSelected;
@@ -47,25 +54,19 @@ public class _CardGameManager : MonoBehaviour
         panel.SetActive(false);
     }
 
-    //private void PreloadCardImage()
-    //{
-    //    for (int i = 0; i < sprites.Length; i++)
-    //        spritePreload.SpriteID = i;
-    //    spritePreload.gameObject.SetActive(false);
-    //}
+   
 
     public void StartCardGame()
     {
         if (gameStart) return;
         gameStart = true;
         panel.SetActive(true);
-        info.SetActive(false);
+        winPanel.SetActive(false);
         SetGamePanel();
         cardSelected = spriteSelected = -1;
         cardLeft = cards.Length;
         SpriteCardAllocation();
         StartCoroutine(HideFace());
-        time = 0;
     }
 
     private void SetGamePanel()
@@ -184,6 +185,35 @@ public class _CardGameManager : MonoBehaviour
     {
         gameSize = (int)sizeSlider.value;
         sizeLabel.text = gameSize + " X " + gameSize;
+        
+        if(gameSize == 2)
+        {
+            remainingTime = 10;
+        }
+        else if(gameSize == 3)
+        {
+            remainingTime = 30;
+        }
+        else if(gameSize == 4)
+        {
+            remainingTime = 60;
+        }
+        else if (gameSize == 5)
+        {
+            remainingTime = 90;
+        }
+        else if (gameSize == 6)
+        {
+            remainingTime = 120;
+        }
+        else if (gameSize == 7)
+        {
+            remainingTime = 150;
+        }
+        else if (gameSize == 8)
+        {
+            remainingTime = 180;
+        }
     }
     public Sprite GetSprite(int spriteId)
     {
@@ -212,10 +242,14 @@ public class _CardGameManager : MonoBehaviour
             if (spriteSelected == spriteId)
             {
                 //correctly matched
+                score += 10;
+                scoreText.text = score.ToString();
                 cards[cardSelected].Inactive();
                 cards[cardId].Inactive();
                 cardLeft -= 2;
                 CheckGameWin();
+                AudioPlayer.Instance.PlayAudio(2);
+
             }
             else
             {
@@ -233,6 +267,7 @@ public class _CardGameManager : MonoBehaviour
         if (cardLeft == 0)
         {
             EndGame();
+            winPanel.SetActive(true);
             AudioPlayer.Instance.PlayAudio(1);
         }
     }
@@ -248,19 +283,34 @@ public class _CardGameManager : MonoBehaviour
         EndGame();
     }
 
-    public void DisplayInfo(bool i)
+    public void Quit()
     {
-        info.SetActive(i);
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit ();
+#endif
     }
 
     private void Update()
     {
-        if (gameStart)
-        {
-            time += Time.deltaTime;
-            timeLabel.text = "Time: " + time + "s";
-        }
         _img.uvRect = new Rect(_img.uvRect.position + new Vector2(_x, _y) * Time.deltaTime, _img.uvRect.size);
+        if(gameStart)
+        {
+            if (remainingTime > 0)
+            {
 
+                remainingTime -= Time.deltaTime;
+            }
+            else if (remainingTime < 0)
+            {
+                remainingTime = 0;
+
+                losePanel.SetActive(true);
+            }
+            int minutes = Mathf.FloorToInt(remainingTime / 60);
+            int seconds = Mathf.FloorToInt(remainingTime % 60);
+            gameTimerText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
+        }
     }
 }
